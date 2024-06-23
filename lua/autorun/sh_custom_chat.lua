@@ -183,6 +183,8 @@ if SERVER then
     -- Shared files
     include( "custom_chat/override_istyping.lua" )
     AddCSLuaFile( "custom_chat/override_istyping.lua" )
+    include( "custom_chat/local_chat.lua" )
+    AddCSLuaFile( "custom_chat/local_chat.lua" )
 
     -- Server files
     include( "custom_chat/server/main.lua" )
@@ -216,6 +218,7 @@ if CLIENT then
 
     -- Shared files
     include( "custom_chat/override_istyping.lua" )
+    include( "custom_chat/local_chat.lua" )
 
     -- Client files
     include( "custom_chat/client/config.lua" )

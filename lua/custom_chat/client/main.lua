@@ -164,10 +164,11 @@ function CustomChat:CreateFrame()
         self:OpenContextMenu( data )
     end
 
-    self.frame.OnSubmitMessage = function( text, channel )
+    self.frame.OnSubmitMessage = function( text, channel, localMode )
         if string.len( text ) > 0 then
             local message = CustomChat.ToJSON( {
                 channel = channel,
+                localMode = localMode,
                 text = text
             } )
 
@@ -219,6 +220,14 @@ function CustomChat:AddMessage( contents, channelId )
             dmSpeaker = ply
             table.insert( contents, 1, ":email: " )
         end
+    end
+
+    local localMode = self.lastReceivedMessage and self.lastReceivedMessage.localMode
+    if localMode then
+        local mode = self.LocalChat:GetMode(localMode)
+
+        table.insert(contents, 1, Color(120, 210, 255))
+        table.insert(contents, 2, "(Локальный) ")
     end
 
     if not self.frame.channels[channelId] then
@@ -654,7 +663,7 @@ net.Receive( "customchat.say", function()
 
     CustomChat.lastReceivedMessage = message
 
-    hook.Run( "OnPlayerChat", speaker, message.text, message.channel == "team", not speaker:Alive() )
+    hook.Run( "OnPlayerChat", speaker, message.text, message.channel == "team", not speaker:Alive(), message.localMode )
 
     CustomChat.lastReceivedMessage = nil
 end )

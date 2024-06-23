@@ -63,6 +63,20 @@ function PANEL:Init()
         draw.RoundedBox( 0, 0, 0, w, h, s._backgroundColor )
     end
 
+    local localMode = vgui.Create("DButton", self.entryDock)
+    self.localMode = localMode
+
+    localMode:Hide()
+    localMode:Dock( LEFT )
+    localMode:SetWide( 64 )
+    localMode:SetTextColor( color_white )
+
+    localMode.Paint = nil
+
+    localMode.DoClick = function( s )
+        self:NextLocalMode()
+    end
+
     self.entry = vgui.Create( "DTextEntry", self.entryDock )
     self.entry:SetFont( "ChatFont" )
     self.entry:SetDrawBorder( false )
@@ -120,6 +134,11 @@ function PANEL:Init()
         elseif code == KEY_ENTER and not input.IsShiftDown() then
             self:SubmitMessage()
             return true
+        
+        elseif code == KEY_BACKSPACE and input.IsControlDown() then
+            self:NextLocalMode()
+            return true
+            
         end
 
         if not s._multilineMode and s.m_bHistory then
@@ -148,19 +167,22 @@ function PANEL:Init()
     self:CreateChannel( "global", L"channel.global", "icon16/world.png" )
     self:CreateChannel( "team", L"channel.team", CustomChat.TEAM_CHAT_ICON )
 
+    self:SetLocalMode( "default" )
     self:SetActiveChannel( "global" )
     self:LoadThemeData()
     self:CloseChat()
 end
 
 function PANEL:OpenChat()
+    local secondary_local = CustomChat.GetConVarInt( "secondary_local", 1 ) == 1
+
     self.entryDock:SetTall( 20 )
     self.history:ScrollToBottom()
 
     self:SetTemporaryMode( false )
     self.isChatOpen = true
 
-    if CustomChat.isUsingTeamOnly == true then
+    if CustomChat.isUsingTeamOnly == true and not secondary_local then
         self:SetActiveChannel( "team" )
     else
         if self.lastChannelId == "team" then
@@ -176,6 +198,13 @@ function PANEL:OpenChat()
                 self:RemoveChannel( id )
             end
         end
+    end
+
+    if CustomChat.GetConVarInt( "always_local", 0 ) == 1 or (CustomChat.isUsingTeamOnly and secondary_local) then
+        self.localMode:Show()
+    else
+        self.localMode:Hide()
+        self.localMode:InvalidateParent()
     end
 end
 
@@ -213,6 +242,24 @@ function PANEL:ClearEverything()
     for id, _ in pairs( self.channels ) do
         self:SetChannelNotificationCount( id, 0 )
     end
+end
+
+function PANEL:NextLocalMode()
+    local currentIndex = self.localMode.mode.index
+    local nextIndex = currentIndex + 1
+
+    if nextIndex > #CustomChat.LocalChat.Modes then
+        nextIndex = 1
+    end
+
+    self:SetLocalMode( CustomChat.LocalChat.Modes[nextIndex].id )
+end
+
+function PANEL:SetLocalMode( id )
+    local mode = CustomChat.LocalChat:GetMode( id )
+
+    self.localMode.mode = mode
+    self.localMode:SetText( mode.name )
 end
 
 function PANEL:NextChannel()
@@ -405,7 +452,7 @@ function PANEL:SubmitMessage()
     end
 
     self.entry:SetText( "" )
-    self.OnSubmitMessage( text, self.lastChannelId )
+    self.OnSubmitMessage( text, self.lastChannelId, self.localMode:IsVisible() and self.localMode.mode.id or false )
 end
 
 function PANEL:OpenDirectMessage()
@@ -546,7 +593,7 @@ function PANEL:Paint( w, h )
     draw.RoundedBox( self.cornerRadius, 0, 0, w, h, self.backgroundColor )
 end
 
-function PANEL.OnSubmitMessage( _text, _channelId ) end
+function PANEL.OnSubmitMessage( _text, _channelId, _localModeId ) end
 function PANEL.OnRightClick( _data ) end
 
 vgui.Register( "CustomChat_Frame", PANEL, "DFrame" )

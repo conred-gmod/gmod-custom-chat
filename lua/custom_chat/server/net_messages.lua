@@ -2,13 +2,13 @@ util.AddNetworkString( "customchat.say" )
 
 -- Gets a list of all players who can
 -- listen to messages from a "speaker".
-local function GetListeners( speaker, text, channel )
+local function GetListeners( speaker, text, channel, localMode )
     local teamOnly = channel == "team"
     local targets = teamOnly and team.GetPlayers( speaker:Team() ) or player.GetHumans()
     local listeners = {}
 
     for _, ply in ipairs( targets ) do
-        if hook.Run( "PlayerCanSeePlayersChat", text, teamOnly, ply, speaker, channel ) then
+        if hook.Run( "PlayerCanSeePlayersChat", text, teamOnly, ply, speaker, channel, localMode ) then
             listeners[#listeners + 1] = ply
         end
     end
@@ -33,6 +33,7 @@ net.Receive( "customchat.say", function( _, speaker )
 
     local text = message.text
     local channel = message.channel
+    local localMode = message.localMode
 
     if not IsStringValid( text ) then return end
     if not IsStringValid( channel ) then return end
@@ -53,7 +54,7 @@ net.Receive( "customchat.say", function( _, speaker )
     end
 
     text = CustomChat.CleanupString( text )
-    text = hook.Run( "PlayerSay", speaker, text, teamOnly, channel )
+    text = hook.Run( "PlayerSay", speaker, text, teamOnly, channel, localMode )
 
     if not IsStringValid( text ) then return end
 
@@ -90,11 +91,12 @@ net.Receive( "customchat.say", function( _, speaker )
         teamonly = teamOnly and 1 or 0,
     } )
 
-    local targets = GetListeners( speaker, text, channel )
+    local targets = GetListeners( speaker, text, channel, localMode )
     if #targets == 0 then return end
 
     message = CustomChat.ToJSON( {
         channel = channel,
+        localMode = localMode,
         text = text
     } )
 
