@@ -165,7 +165,9 @@ function PANEL:Init()
     end
 
     self:CreateChannel( "global", L"channel.global", "icon16/world.png" )
-    self:CreateChannel( "team", L"channel.team", CustomChat.TEAM_CHAT_ICON )
+    if CustomChat.GetConVarInt( "enable_team_channel", 1 ) == 1 then
+        self:CreateChannel( "team", L"channel.team", CustomChat.TEAM_CHAT_ICON )
+    end
 
     self:SetLocalMode( "default" )
     self:SetActiveChannel( "global" )
