@@ -170,6 +170,22 @@ pre {
     overflow-y: auto;
 }
 
+.notification {
+    position: fixed;
+    bottom: 0;
+    background-color: #4caf50;
+    color: white;
+    padding: 2px;
+    margin: 2px;
+    border-radius: 5px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    opacity: 0;
+    transition: opacity 0.5s;
+}
+.notification.show {
+    opacity: 1;
+}
+
 /****** Message elements ******/
 
 img {
@@ -414,7 +430,12 @@ function SetTemporaryMode(v) {
         SetActiveChannel("global");
     }
 
-    if (v) SetEmojiPanelVisible(false);
+    if (v) {
+        SetEmojiPanelVisible(false);
+        
+        const notifications = document.querySelectorAll('.notification');
+        notifications.forEach(notification => notification.remove());
+    }
 }
 
 function ClearSelection() {
@@ -481,6 +502,32 @@ function FindAndHighlight(text) {
 
 function OnSelectEmoji(test) {
     if (this._emojiId) CChat.OnSelectEmoji(this._emojiId);
+}
+
+let elementNotification = null;
+function Notify(text, time) {
+    if (elementNotification) {
+        elementNotification.remove()
+    }
+
+    const el = document.createElement("div")
+    el.classList.add("notification")
+    el.textContent = text
+
+    document.body.appendChild(el)
+
+    setTimeout(() => el.classList.add("show"), 50)
+
+    setTimeout(() => {
+        el.classList.remove("show")
+
+        setTimeout(() => {
+            el.remove()
+            elementNotification = null;
+        }, 0.5 * 1000)
+    }, time * 1000)
+
+    elementNotification = el;
 }
 
 window.addEventListener("contextmenu", function(ev) {
@@ -620,6 +667,12 @@ function PANEL:FindText()
     y = y + ( h * 0.5 ) - ( frameH * 0.5 )
 
     frame:SetPos( x, y )
+end
+
+function PANEL:Notify( text, time )
+    self:QueueJavascript(
+        Format( "Notify(\"%s\", %d)", text, time )
+    )
 end
 
 --- Set if the chat history should only show temporary messages.
