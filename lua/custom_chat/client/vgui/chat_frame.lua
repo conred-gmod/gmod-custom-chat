@@ -426,9 +426,9 @@ function PANEL:AppendContents( contents, channelId, showTimestamp )
 end
 
 function PANEL:AppendAtCaret( text )
-    local caretPos = self.entry:GetCaretPos()
     local oldText = self.entry:GetText()
-    local newText = oldText:sub( 1, caretPos ) .. text .. oldText:sub( caretPos + 1 )
+    local caretPos = self.entry:GetCaretPos() 
+    local newText = utf8.sub( oldText, 1, caretPos ) .. text .. utf8.sub( oldText, caretPos + 1 )
 
     if string.len( newText ) < self.entry:GetMaximumCharCount() then
         self.entry:SetText( newText )
