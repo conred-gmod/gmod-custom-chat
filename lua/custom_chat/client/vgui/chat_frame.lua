@@ -138,9 +138,12 @@ function PANEL:Init()
         elseif code == KEY_BACKSPACE and input.IsControlDown() then
             self:NextLocalMode()
             return true
-            
+           
+        elseif code == KEY_V and input.IsControlDown() then
+            s.test:RequestFocus()
         end
 
+        
         if not s._multilineMode and s.m_bHistory then
             if code == KEY_UP then
                 s.HistoryPos = s.HistoryPos - 1
@@ -153,6 +156,54 @@ function PANEL:Init()
             end
         end
     end
+
+    local html = vgui.Create( "DHTML", self.entry )
+    self.entry.test = html
+
+    html:Dock( FILL )
+    html:SetHTML("")
+    html:AddFunction( "lua", "Focus", function()
+        self.entry:RequestFocus()
+    end )
+    html:AddFunction( "lua", "OnImagePaste", function(name, base64) 
+        self:AppendAtCaret("{loading}")
+
+        CustomChat.Imgur:Upload(base64, function(url)
+            if not url then return end
+            
+            self.entry:SetText( self.entry:GetText():gsub("{loading}", url) )
+            
+            self.entry:SetCaretPos(#self.entry:GetValue())
+        end)
+    end )
+    html:QueueJavascript([[
+        window.addEventListener("paste", (event) => {
+			if (!event.clipboardData && !window.clipboardData) return;
+			const items = (event.clipboardData || window.clipboardData).items;
+			if (!items) return;
+
+			for (const item of items) {
+				if (item.type.match("^image/")) {
+					const file = item.getAsFile();
+					const reader = new FileReader();
+					reader.onload = () => {
+						const b64 = btoa(reader.result);
+						lua.OnImagePaste(file.name, b64);
+					};
+
+					reader.readAsBinaryString(file);
+					
+                    lua.Focus();
+
+                    break;
+				}
+			}
+        })
+
+        window.addEventListener("focus", (event) => {
+
+        })
+    ]])
 
     local emojisButton = vgui.Create( "DImageButton", self.entryDock )
     emojisButton:SetImage( "icon16/emoticon_smile.png" )
