@@ -138,9 +138,19 @@ function PANEL:Init()
         elseif code == KEY_BACKSPACE and input.IsControlDown() then
             self:NextLocalMode()
             return true
-            
+           
+        elseif code == KEY_V and input.IsControlDown() then
+            if s.imagePasteHack._IsLoading then 
+                self.history:Notify("Подождите загрузки предыдущего изображения", 2) 
+            else
+                -- For some reason HTML doesn't focus on text paste, so it works just as we need
+                --  not sure if is right
+                s.imagePasteHack:RequestFocus()
+            end
+
         end
 
+        
         if not s._multilineMode and s.m_bHistory then
             if code == KEY_UP then
                 s.HistoryPos = s.HistoryPos - 1
@@ -153,6 +163,61 @@ function PANEL:Init()
             end
         end
     end
+
+    local imagePasteHack = vgui.Create( "DHTML", self.entry )
+    self.entry.imagePasteHack = imagePasteHack
+
+    imagePasteHack:SetHTML([[
+    <script>
+        window.addEventListener("paste", (event) => {
+            if (!event.clipboardData && !window.clipboardData) return;
+            const items = (event.clipboardData || window.clipboardData).items;
+            if (!items) return;
+
+            for (const item of items) {
+                if (item.type.match("^image/")) {
+                    const file = item.getAsFile();
+                    const reader = new FileReader();
+                    reader.onload = () => {
+                        const b64 = btoa(reader.result);
+
+                        lua.OnImagePaste(b64);
+                    };
+
+                    reader.readAsBinaryString(file);
+                
+                    break;
+                }
+            }
+        })
+
+        window.addEventListener("focus", (event) => {
+            lua.Notify("Нажмите Ctrl+V повторно, чтобы вставить изображение из буфера обмена", 3)
+        })
+    </script>
+    ]])
+    imagePasteHack:SetSize(0, 0)
+    imagePasteHack:AddFunction( "lua", "OnImagePaste", function( base64 ) 
+        s._IsLoading = true
+
+        self:AppendAtCaret("{загрузка}")
+        self.entry:RequestFocus()
+
+        CustomChat.Imgur:Upload( base64, function(url)
+            s._IsLoading = nil
+
+            if not url then return end
+
+            self.entry:SetText( self.entry:GetText():gsub("{загрузка}", url) )
+
+            self.entry:RequestFocus()
+            self.entry:SetCaretPos(utf8.len(self.entry:GetValue()))
+        end )
+    end )
+
+    imagePasteHack:AddFunction( "lua", "Notify", function( text, time ) 
+        self.history:Notify( text, time )
+    end )
 
     local emojisButton = vgui.Create( "DImageButton", self.entryDock )
     emojisButton:SetImage( "icon16/emoticon_smile.png" )
