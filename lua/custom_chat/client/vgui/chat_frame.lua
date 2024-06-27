@@ -175,6 +175,19 @@ function PANEL:Init()
     self:CloseChat()
 end
 
+function PANEL:Think()
+    local indexes = self.channelIndexes
+    for i = 1, #indexes do
+        local channel = self.channels[indexes[i]]
+        if channel.check == nil then continue end
+
+        local visible = channel.check()
+        if visible ~= nil and visible ~= channel.button:IsVisible() then
+            self:SetChannelVisible( channel.id, visible )
+        end
+    end
+end
+
 function PANEL:OpenChat()
     local secondary_local = CustomChat.GetConVarInt( "secondary_local", 1 ) == 1
 
@@ -283,11 +296,12 @@ function PANEL:NextChannel()
     self:SetActiveChannel( self.channelIndexes[nextIndex] )
 end
 
-function PANEL:CreateChannel( id, name, icon )
+function PANEL:CreateChannel( id, name, icon, func_check )
     local channel = self.channels[id]
 
     if channel then
         channel.name = name
+        channel.check = func_check
         channel.button:SetTooltip( name )
         channel.button:SetIcon( icon )
 
@@ -298,6 +312,7 @@ function PANEL:CreateChannel( id, name, icon )
 
     channel = {
         name = name,
+        check = func_check,
         missedCount = 0
     }
 
@@ -329,6 +344,23 @@ function PANEL:RemoveChannel( id )
     self.channels[id] = nil
 
     table.RemoveByValue( self.channelIndexes, id )
+end
+
+function PANEL:SetChannelVisible( id, state )
+    local channel = self.channels[id]
+    if channel == nil then return end
+
+    if state then
+        channel.button:Show()
+    else
+        if id == self.lastChannelId then
+            self:NextChannel()
+        end
+
+        channel.button:Hide()
+    end
+
+    self.history:QueueJavascript( "SetChannelVisible(\"%s\", %s)":format( id, tostring( state ) ) )
 end
 
 function PANEL:SetActiveChannel( id )
@@ -430,9 +462,9 @@ function PANEL:AppendAtCaret( text )
     local caretPos = self.entry:GetCaretPos() 
     local newText = utf8.sub( oldText, 1, caretPos ) .. text .. utf8.sub( oldText, caretPos + 1 )
 
-    if string.len( newText ) < self.entry:GetMaximumCharCount() then
+    if utf8.len( newText ) < self.entry:GetMaximumCharCount() then
         self.entry:SetText( newText )
-        self.entry:SetCaretPos( caretPos + text:len() )
+        self.entry:SetCaretPos( caretPos + utf8.len( text ) )
     else
         surface.PlaySound( "resource/warning.wav" )
     end

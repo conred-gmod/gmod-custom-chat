@@ -372,6 +372,7 @@ function CreateChannel(chid) {
     if (channels[chid]) return;
 
     channels[chid] = document.createElement("pre");
+    channels[chid].isVisible = true;
     channels[chid].id = "channel_" + chid;
     channels[chid].className = "channel";
     channels[chid].style["visibility"] = "hidden";
@@ -383,6 +384,12 @@ function RemoveChannel(chid) {
 
     elChannelPanel.removeChild(channels[chid]);
     delete channels[chid];
+}
+
+function SetChannelVisible(chid, v) {
+    if (!channels[chid]) return;
+
+    channels[chid].isVisible = v
 }
 
 function SetEmojiPanelVisible(v) {
@@ -439,7 +446,7 @@ function ScrollAllChannelsToBottom() {
 
 function AddMessage(message, chid, showAnimation, showTemporary) {
     var e = channels[chid];
-    if (!e) return;
+    if (!e || !e.isVisible) return;
 
     var wasAtBottom = IsScrollAtBottom(e);
     e.appendChild(message);

@@ -241,7 +241,7 @@ function CustomChat:AddMessage( contents, channelId )
     self.frame:AppendContents( contents, channelId, self.Config.timestamps )
 end
 
-function CustomChat:CreateCustomChannel( id, tooltip, icon )
+function CustomChat:CreateCustomChannel( id, tooltip, icon, func_check )
     if not IsValid( self.frame ) then
         self:CreateFrame()
     end
@@ -254,7 +254,7 @@ function CustomChat:CreateCustomChannel( id, tooltip, icon )
         error( "You cannot use a ID longer than " .. CustomChat.MAX_CHANNEL_ID_LENGTH .. " characters on CustomChat:CreateCustomChannel!" )
     end
 
-    return self.frame:CreateChannel( id, tooltip, icon )
+    return self.frame:CreateChannel( id, tooltip, icon, func_check )
 end
 
 function CustomChat:RemoveCustomChannel( id )
