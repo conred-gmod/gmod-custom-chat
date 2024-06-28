@@ -220,6 +220,8 @@ function PANEL:Init()
 end
 
 function PANEL:Think()
+    if not self.channelList then return end
+
     local indexes = self.channelIndexes
     for i = 1, #indexes do
         local channel = self.channels[indexes[i]]
@@ -275,6 +277,8 @@ function PANEL:UpdateChannelList()
         button.isSelected = channel.isSelected
         button.colorSelected = self.highlightColor
         button.notificationCount = channel.notificationCount
+
+        channel.button = button
     end
 
     local buttonOpenDM = vgui.Create( "DButton", self.channelList )
@@ -414,6 +418,7 @@ function PANEL:CreateChannel( id, name, icon, func_check )
     self.history:QueueJavascript( "CreateChannel('" .. id .. "');" )
 
     channel = {
+        id = id,
         name = name,
         check = func_check,
         icon = icon,
@@ -447,32 +452,11 @@ function PANEL:SetChannelVisible( id, state )
     local channel = self.channels[id]
     if channel == nil then return end
 
-    if state then
-        channel.button:Show()
-    else
-        if id == self.lastChannelId then
-            self:NextChannel()
-        end
-
-        channel.button:Hide()
+    if id == self.lastChannelId then
+        self:NextChannel()
     end
 
-    self.history:QueueJavascript( Format("SetChannelVisible(\"%s\", %s)", id, tostring( state ) ) )
-end
-
-function PANEL:SetChannelVisible( id, state )
-    local channel = self.channels[id]
-    if channel == nil then return end
-
-    if state then
-        channel.button:Show()
-    else
-        if id == self.lastChannelId then
-            self:NextChannel()
-        end
-
-        channel.button:Hide()
-    end
+    channel.button:SetVisible( state )
 
     self.history:QueueJavascript( Format("SetChannelVisible(\"%s\", %s)", id, tostring( state ) ) )
 end
