@@ -7,30 +7,7 @@ function PANEL:Init()
 
     self.channels = {}
     self.channelIndexes = {}
-
-    self.channelList = vgui.Create( "DPanel", self )
-    self.channelList:SetWide( 30 )
-    self.channelList:Dock( LEFT )
-    self.channelList:DockMargin( 0, -24, 4, 0 )
-    self.channelList:DockPadding( 2, 2, 2, 2 )
-    self.channelList._backgroundColor = Color( 0, 0, 0 )
-
-    self.channelList.Paint = function( s, w, h )
-        surface.SetDrawColor( s._backgroundColor:Unpack() )
-        surface.DrawRect( 0, 0, w, h )
-    end
-
-    local buttonOpenDM = vgui.Create( "DButton", self.channelList )
-    buttonOpenDM:SetText( "" )
-    buttonOpenDM:SetIcon( "icon16/add.png" )
-    buttonOpenDM:SetTall( 26 )
-    buttonOpenDM:SetTooltip( L"channel.open_dm" )
-    buttonOpenDM:SetPaintBackground( false )
-    buttonOpenDM:Dock( BOTTOM )
-
-    buttonOpenDM.DoClick = function()
-        self:OpenDirectMessage()
-    end
+    self.channelListBackgroundColor = Color( 0, 0, 0 )
 
     self.history = vgui.Create( "CustomChat_History", self )
     self.history:Dock( FILL )
@@ -255,6 +232,64 @@ function PANEL:Think()
     end
 end
 
+function PANEL:SetSidebarEnabled( enable )
+    if not enable then
+        if IsValid( self.channelList ) then
+            self.channelList:Remove()
+        end
+
+        self.channelList = nil
+        return
+    end
+
+    self.channelList = vgui.Create( "DPanel", self )
+    self.channelList:SetWide( 30 )
+    self.channelList:Dock( LEFT )
+    self.channelList:DockMargin( 0, -24, 4, 0 )
+    self.channelList:DockPadding( 2, 2, 2, 2 )
+
+    self.channelList.Paint = function( _, w, h )
+        surface.SetDrawColor( self.channelListBackgroundColor:Unpack() )
+        surface.DrawRect( 0, 0, w, h )
+    end
+
+    self:UpdateChannelList()
+end
+
+function PANEL:UpdateChannelList()
+    if not self.channelList then return end
+
+    self.channelList:Clear()
+    self.channelList:SetVisible( self.isChatOpen )
+
+    for _, id in ipairs( self.channelIndexes ) do
+        local channel = self.channels[id]
+
+        local button = vgui.Create( "CustomChat_ChannelButton", self.channelList )
+        button:SetTall( 28 )
+        button:SetTooltip( channel.name )
+        button:SetIcon( channel.icon )
+        button:Dock( TOP )
+        button:DockMargin( 0, 0, 0, 2 )
+        button.channelId = id
+        button.isSelected = channel.isSelected
+        button.colorSelected = self.highlightColor
+        button.notificationCount = channel.notificationCount
+    end
+
+    local buttonOpenDM = vgui.Create( "DButton", self.channelList )
+    buttonOpenDM:SetText( "" )
+    buttonOpenDM:SetIcon( "icon16/add.png" )
+    buttonOpenDM:SetTall( 26 )
+    buttonOpenDM:SetTooltip( L"channel.open_dm" )
+    buttonOpenDM:SetPaintBackground( false )
+    buttonOpenDM:Dock( BOTTOM )
+
+    buttonOpenDM.DoClick = function()
+        self:OpenDirectMessage()
+    end
+end
+
 function PANEL:OpenChat()
     local secondary_local = CustomChat.GetConVarInt( "secondary_local", 1 ) == 1
 
@@ -348,7 +383,7 @@ function PANEL:NextChannel()
     local currentIndex = 1
 
     for i, id in ipairs( self.channelIndexes ) do
-        if self.channels[id].button.isSelected then
+        if self.channels[id].isSelected then
             currentIndex = i
             break
         end
@@ -369,8 +404,9 @@ function PANEL:CreateChannel( id, name, icon, func_check )
     if channel then
         channel.name = name
         channel.check = func_check
-        channel.button:SetTooltip( name )
-        channel.button:SetIcon( icon )
+        channel.icon = icon
+
+        self:UpdateChannelList()
 
         return channel
     end
@@ -380,20 +416,14 @@ function PANEL:CreateChannel( id, name, icon, func_check )
     channel = {
         name = name,
         check = func_check,
-        missedCount = 0
+        icon = icon,
+        missedCount = 0,
+        notificationCount = 0
     }
-
-    channel.button = vgui.Create( "CustomChat_ChannelButton", self.channelList )
-    channel.button:SetTall( 28 )
-    channel.button:SetTooltip( name )
-    channel.button:SetIcon( icon )
-    channel.button:Dock( TOP )
-    channel.button:DockMargin( 0, 0, 0, 2 )
-    channel.button.channelId = id
-    channel.button.colorSelected = self.highlightColor
 
     self.channels[id] = channel
     self.channelIndexes[#self.channelIndexes + 1] = id
+    self:UpdateChannelList()
 
     return channel
 end
@@ -407,10 +437,27 @@ function PANEL:RemoveChannel( id )
 
     self.history:QueueJavascript( "RemoveChannel('" .. id .. "');" )
 
-    self.channels[id].button:Remove()
-    self.channels[id] = nil
-
     table.RemoveByValue( self.channelIndexes, id )
+
+    self.channels[id] = nil
+    self:UpdateChannelList()
+end
+
+function PANEL:SetChannelVisible( id, state )
+    local channel = self.channels[id]
+    if channel == nil then return end
+
+    if state then
+        channel.button:Show()
+    else
+        if id == self.lastChannelId then
+            self:NextChannel()
+        end
+
+        channel.button:Hide()
+    end
+
+    self.history:QueueJavascript( Format("SetChannelVisible(\"%s\", %s)", id, tostring( state ) ) )
 end
 
 function PANEL:SetChannelVisible( id, state )
@@ -444,7 +491,7 @@ function PANEL:SetActiveChannel( id )
     end
 
     for chid, c in pairs( self.channels ) do
-        c.button.isSelected = chid == id
+        c.isSelected = chid == id
     end
 
     if id == "team" then
@@ -466,12 +513,14 @@ function PANEL:SetActiveChannel( id )
 
     if self.isChatOpen then
         self.entry:RequestFocus()
+        self:UpdateChannelList()
     end
 end
 
 function PANEL:SetChannelNotificationCount( id, count )
     if self.channels[id] then
-        self.channels[id].button.notificationCount = count
+        self.channels[id].notificationCount = count
+        self:UpdateChannelList()
     end
 end
 
@@ -500,12 +549,9 @@ function PANEL:LoadThemeData( data )
     self.entry:SetHighlightColor( self.highlightColor )
 
     self.entryDock._backgroundColor = self.inputBackgroundColor
-    self.channelList._backgroundColor = self.inputBackgroundColor
+    self.channelListBackgroundColor = self.inputBackgroundColor
 
-    for _, c in pairs( self.channels ) do
-        c.button.colorSelected = self.highlightColor
-    end
-
+    self:UpdateChannelList()
     self:InvalidateChildren()
 end
 
@@ -561,6 +607,10 @@ function PANEL:OpenDirectMessage()
         Derma_Message( L"server_dms_disabled", L"open_dm", L"ok" )
 
         return
+    end
+
+    if IsValid( self.frameOpenDM ) then
+        self.frameOpenDM:Close()
     end
 
     local frame = vgui.Create( "DFrame" )
