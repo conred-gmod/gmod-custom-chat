@@ -223,6 +223,8 @@ function CustomChat:AddMessage( contents, channelId )
         end
     end
 
+    hook.Run("PopulateCustomChatMessage", contents, channelId)
+
     local localMode = self.lastReceivedMessage and self.lastReceivedMessage.localMode
     if localMode then
         local mode = self.LocalChat:GetMode(localMode)
