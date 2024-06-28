@@ -198,13 +198,15 @@ function PANEL:Init()
     ]])
     imagePasteHack:SetSize(0, 0)
     imagePasteHack:AddFunction( "lua", "OnImagePaste", function( base64 ) 
-        s._IsLoading = true
+        if imagePasteHack._IsLoading then return end
+
+        imagePasteHack._IsLoading = true
 
         self:AppendAtCaret("{загрузка}")
         self.entry:RequestFocus()
 
         CustomChat.Imgur:Upload( base64, function(url)
-            s._IsLoading = nil
+            imagePasteHack._IsLoading = nil
 
             if not url then return end
 
@@ -425,7 +427,7 @@ function PANEL:SetChannelVisible( id, state )
         channel.button:Hide()
     end
 
-    self.history:QueueJavascript( "SetChannelVisible(\"%s\", %s)":format( id, tostring( state ) ) )
+    self.history:QueueJavascript( Format("SetChannelVisible(\"%s\", %s)", id, tostring( state ) ) )
 end
 
 function PANEL:SetActiveChannel( id )
