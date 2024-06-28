@@ -220,6 +220,9 @@ function PANEL:Init()
 end
 
 function PANEL:Think()
+    -- Makes panel resizable and draggable
+    self.BaseClass.Think(self)
+
     if not self.channelList then return end
 
     local indexes = self.channelIndexes
