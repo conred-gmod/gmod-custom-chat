@@ -125,6 +125,18 @@ CustomChat.ResetChatbox()
 
 local Config = CustomChat.Config
 
+function Say( text, channel, localMode )
+    local message = CustomChat.ToJSON( {
+        channel = channel or "global",
+        localMode = localMode,
+        text = text
+    } )
+
+    net.Start( "customchat.say", false )
+    net.WriteString( message )
+    net.SendToServer()
+end
+
 function CustomChat:CreateFrame()
     self.frame = vgui.Create( "CustomChat_Frame" )
     self.frame:SetDeleteOnClose( false )
@@ -167,15 +179,7 @@ function CustomChat:CreateFrame()
 
     self.frame.OnSubmitMessage = function( text, channel, localMode )
         if string.len( text ) > 0 then
-            local message = CustomChat.ToJSON( {
-                channel = channel,
-                localMode = localMode,
-                text = text
-            } )
-
-            net.Start( "customchat.say", false )
-            net.WriteString( message )
-            net.SendToServer()
+            Say( text, channel, localMode )
         end
 
         if not IsValid( self.Theme.editorFrame ) or string.len( text ) == 0 then

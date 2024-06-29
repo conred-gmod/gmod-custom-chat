@@ -19,22 +19,7 @@ end
 local IsStringValid = CustomChat.IsStringValid
 local sayCooldown = {}
 
-net.Receive( "customchat.say", function( _, speaker )
-    local playerId = speaker:SteamID()
-    local nextSay = sayCooldown[playerId] or 0
-
-    if RealTime() < nextSay then return end
-
-    sayCooldown[playerId] = RealTime() + 0.5
-
-    local message = net.ReadString()
-
-    message = CustomChat.FromJSON( message )
-
-    local text = message.text
-    local channel = message.channel
-    local localMode = message.localMode
-
+local function Say( speaker, text, teamOnly, channel, localMode )
     if not IsStringValid( text ) then return end
     if not IsStringValid( channel ) then return end
     if channel:len() > CustomChat.MAX_CHANNEL_ID_LENGTH then return end
@@ -104,6 +89,27 @@ net.Receive( "customchat.say", function( _, speaker )
     net.WriteString( message )
     net.WriteEntity( speaker )
     net.Send( targets )
+end
+
+local META_PLAYER = FindMetaTable("Player")
+
+function META_PLAYER:Say( text, teamOnly, channel, localMode )
+    Say( self, text, teamOnly, channel or "global", localMode )
+end
+
+net.Receive( "customchat.say", function( _, speaker )
+    local playerId = speaker:SteamID()
+    local nextSay = sayCooldown[playerId] or 0
+
+    if RealTime() < nextSay then return end
+
+    sayCooldown[playerId] = RealTime() + 0.5
+
+    local message = net.ReadString()
+
+    message = CustomChat.FromJSON( message )
+
+    Say( speaker, message.text, false, message.channel, message.localMode )
 end )
 
 hook.Add( "PlayerDisconnected", "CustomChat.SayCooldownCleanup", function( ply )
