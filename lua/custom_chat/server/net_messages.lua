@@ -19,7 +19,7 @@ end
 local IsStringValid = CustomChat.IsStringValid
 local sayCooldown = {}
 
-local function Say( speaker, text, teamOnly, channel, localMode )
+local function Say( speaker, text, channel, localMode )
     if not IsStringValid( text ) then return end
     if not IsStringValid( channel ) then return end
     if channel:len() > CustomChat.MAX_CHANNEL_ID_LENGTH then return end
@@ -94,7 +94,7 @@ end
 local META_PLAYER = FindMetaTable("Player")
 
 function META_PLAYER:Say( text, teamOnly, channel, localMode )
-    Say( self, text, teamOnly, channel or "global", localMode )
+    Say( self, text, teamOnly and "team" or (channel or "global"), localMode )
 end
 
 net.Receive( "customchat.say", function( _, speaker )
@@ -109,7 +109,7 @@ net.Receive( "customchat.say", function( _, speaker )
 
     message = CustomChat.FromJSON( message )
 
-    Say( speaker, message.text, false, message.channel, message.localMode )
+    Say( speaker, message.text, message.channel, message.localMode )
 end )
 
 hook.Add( "PlayerDisconnected", "CustomChat.SayCooldownCleanup", function( ply )
