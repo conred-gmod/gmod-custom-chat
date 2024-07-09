@@ -373,9 +373,13 @@ var elEmojiPanel = document.getElementById("emojiContainer");
 var channels = {};
 var lastEmojiScroll = 0;
 
+function RemoveElement(el) {
+    el.parentElement.removeChild(el);
+}
+
 function RemoveElementById(id) {
     var e = document.getElementById(id);
-    if (e) e.parentElement.removeChild(e);
+    if (e) RemoveElement(e);
 }
 
 function SetActiveChannel(chid) {
@@ -431,17 +435,17 @@ function SetTemporaryMode(v) {
     if (v) {
         elChannelPanel.style["visibility"] = "hidden";
         SetActiveChannel();
+
+        SetEmojiPanelVisible(false);
+
+        const notifications = document.querySelectorAll(".notification");
+        for (var i = 0; i < notifications.length; i++) {
+            RemoveElement(notifications[i])
+        }
     }
     else {
         elChannelPanel.style["visibility"] = "visible";
         SetActiveChannel("global");
-    }
-
-    if (v) {
-        SetEmojiPanelVisible(false);
-        
-        const notifications = document.querySelectorAll('.notification');
-        notifications.forEach(notification => notification.remove());
     }
 }
 
@@ -511,25 +515,25 @@ function OnSelectEmoji(test) {
     if (this._emojiId) CChat.OnSelectEmoji(this._emojiId);
 }
 
-let elementNotification = null;
+var elementNotification = null;
 function Notify(text, time) {
-    if (elementNotification) {
-        elementNotification.remove()
+    if (elementNotification !== null) {
+        RemoveElement(elementNotification);
     }
 
-    const el = document.createElement("div")
-    el.classList.add("notification")
-    el.textContent = text
+    const el = document.createElement("div");
+    el.classList.add("notification");
+    el.textContent = text;
 
-    document.body.appendChild(el)
+    document.body.appendChild(el);
 
-    setTimeout(() => el.classList.add("show"), 50)
+    setTimeout(function() {el.classList.add("show")}, 50)
 
-    setTimeout(() => {
-        el.classList.remove("show")
+    setTimeout(function() {
+        el.classList.remove("show");
 
-        setTimeout(() => {
-            el.remove()
+        setTimeout(function() {
+            RemoveElement(el);
             elementNotification = null;
         }, 0.5 * 1000)
     }, time * 1000)
@@ -856,8 +860,9 @@ elTimestamp.textContent = '%s ';
             -- Update the context's color
             if type( b.value ) == "string" then
                 -- Color string with the <R,G,B> format
-                local colorStr = ChopEnds( b.value, 2 )
-                local colorTbl = string.Explode( ",", colorStr, false )
+                -- local colorStr = ChopEnds( b.value, 2 )
+                local colorTbl = string.Explode( ",", b.value, false )
+                PrintTable(colorTbl)
 
                 ctx.color = Color(
                     math.Clamp( tonumber( colorTbl[1] ) or 0, 0, 255 ),

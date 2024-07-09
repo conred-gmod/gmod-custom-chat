@@ -146,16 +146,18 @@ function PANEL:Init()
 
     imagePasteHack:SetHTML([[
     <script>
-        window.addEventListener("paste", (event) => {
+        window.addEventListener("paste", function (event) {
             if (!event.clipboardData && !window.clipboardData) return;
             const items = (event.clipboardData || window.clipboardData).items;
             if (!items) return;
 
-            for (const item of items) {
+            for (var i = 0; i < items.length; i++) {
+                const item = items[i];
+
                 if (item.type.match("^image/")) {
                     const file = item.getAsFile();
                     const reader = new FileReader();
-                    reader.onload = () => {
+                    reader.onload = function() {
                         const b64 = btoa(reader.result);
 
                         lua.OnImagePaste(b64);
@@ -168,7 +170,7 @@ function PANEL:Init()
             }
         })
 
-        window.addEventListener("focus", (event) => {
+        window.addEventListener("focus", function (event) {
             lua.Notify("Нажмите Ctrl+V повторно, чтобы вставить изображение из буфера обмена", 3)
         })
     </script>
