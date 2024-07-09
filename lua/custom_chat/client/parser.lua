@@ -15,10 +15,13 @@ local rangeTypes = {
     { type = "italic", pattern = "%*[^%c][^%*]+%*" },
     { type = "bold", pattern = "%*%*[^%c][^%*]+%*%*" },
     { type = "bold_italic", pattern = "%*%*%*[^%c][^%*]+%*%*%*" },
-    { type = "color", pattern = "<%d+,%d+,%d+>" },
+    { type = "color", pattern = "<(%d+,%d+,%d+)>", get_value = function(v) return v:match("%d+,%d+,%d+") end },
+    { type = "color", pattern = "<color=(%d+,%d+,%d+)>", get_value = function(v) return v:match("color=(%d+,%d+,%d+)") end },
     { type = "rainbow", pattern = "%$%$[^%c]+%$%$" },
     { type = "advert", pattern = "%[%[[^%c]+%]%]" },
-    { type = "emoji", pattern = ":[%w_%-]+:" },
+    { type = "emoji", pattern = ":([%w_%-]+):", get_value = function(v) return v:match("%w+") end },
+    { type = "emoji", pattern = "<emote=([%w_%-]+)>", get_value = function(v) return v:match("emote=([%w_%-]+)>") end },
+    { type = "emoji", pattern = "<emote=([%w_%-]+),%d+>", get_value = function(v) return v:match("emote=([%w_%-]+)") end },
     { type = "spoiler", pattern = "||[^%c]-[^|]*||" },
     { type = "code_line", pattern = "`[^%c]+[`]*`" },
     { type = "code", pattern = "{{[^%z]-[^}}]*}}" },
@@ -40,7 +43,7 @@ local function FindAllRangesOfType( rangeType, str )
         pStart, pEnd = Find( str, rangeType.pattern, pStart )
 
         if pStart then
-            ranges[#ranges + 1] = { s = pStart, e = pEnd, type = rangeType.type }
+            ranges[#ranges + 1] = { s = pStart, e = pEnd, type = rangeType.type, get_value = rangeType.get_value }
             pStart = pEnd
         end
     end
@@ -61,7 +64,7 @@ local function MergeRangeInto( tbl, range )
     end
 
     -- Include the new range
-    newTbl[#newTbl + 1] = { s = range.s, e = range.e, type = range.type, value = range.value }
+    newTbl[#newTbl + 1] = { s = range.s, e = range.e, type = range.type, value = range.value, get_value = range.get_value }
 
     return newTbl
 end
@@ -111,7 +114,7 @@ function CustomChat.ParseString( str, outFunc )
         local value = Substring( str, r.s, r.e )
 
         if value ~= "" then
-            outFunc( r.type, value )
+            outFunc( r.type, r.get_value ~= nil and r.get_value(value) or value )
         end
     end
 
