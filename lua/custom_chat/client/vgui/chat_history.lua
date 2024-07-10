@@ -862,7 +862,6 @@ elTimestamp.textContent = '%s ';
                 -- Color string with the <R,G,B> format
                 -- local colorStr = ChopEnds( b.value, 2 )
                 local colorTbl = string.Explode( ",", b.value, false )
-                PrintTable(colorTbl)
 
                 ctx.color = Color(
                     math.Clamp( tonumber( colorTbl[1] ) or 0, 0, 255 ),
