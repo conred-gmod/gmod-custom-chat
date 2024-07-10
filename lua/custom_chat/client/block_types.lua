@@ -479,7 +479,7 @@ blocks["player"] = function( value, ctx )
 end
 
 blocks["emoji"] = function( value, ctx )
-    local url = CustomChat.GetEmojiURL( value )
+    local url = CustomChat.GetEmojiURL( value:sub( 2, -2 ) )
 
     if url then
         return Create.Image( url, nil, "emoji", value )
