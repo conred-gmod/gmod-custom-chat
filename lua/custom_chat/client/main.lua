@@ -483,6 +483,7 @@ local function CustomChat_Close()
     CustomChat.SetTyping( false )
 
     gui.EnableScreenClicker( false )
+    gui.HideGameUI()
 
     hook.Run( "FinishChat" )
     hook.Run( "ChatTextChanged", "" )
@@ -542,7 +543,7 @@ local function CustomChat_Think()
 
             CustomChat.frame:SetVisible( false )
 
-            if CustomChat.frame.isChatOpen then
+            if CustomChat.frame.isChatOpen and not gui.IsConsoleVisible() then
                 chat.Close()
             end
         end
