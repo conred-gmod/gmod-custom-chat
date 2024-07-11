@@ -126,6 +126,9 @@ CustomChat.ResetChatbox()
 local Config = CustomChat.Config
 
 function Say( text, channel, localMode )
+    local text_transformed = hook.Run( "TransformChatText", text )
+    if isstring(text_transformed) then text = text_transformed end
+
     local message = CustomChat.ToJSON( {
         channel = channel or "global",
         localMode = localMode,
