@@ -7,8 +7,9 @@ CustomChat.DefaultAddText = CustomChat.DefaultAddText or chat.AddText
 CustomChat.DefaultGetChatBoxPos = CustomChat.DefaultGetChatBoxPos or chat.GetChatBoxPos
 CustomChat.DefaultGetChatBoxSize = CustomChat.DefaultGetChatBoxSize or chat.GetChatBoxSize
 
+local table = table
 local Floor = math.floor
-local Format = string.format
+local Format, Split = string.format, string.Split
 
 function CustomChat.ChopEnds( str, n )
     return str:sub( n, -n )
@@ -506,12 +507,22 @@ end
 local messageBinds = {
     ["messagemode"] = true,
     ["messagemode2"] = true,
-    ["say"] = true,
-    ["say_team"] = true
 }
 
 local function CustomChat_OnPlayerBindPress( _, bind, pressed )
-    if not pressed or not messageBinds[bind] then return end
+    if not pressed then return end
+
+    -- Transmit say* binds via CustomChat network message
+    local parts = Split(bind, " ")
+    if parts[1]:sub(1, 3) == "say" then
+        table.remove(parts, 1) -- remove command
+
+        Say(table.concat(parts, " "))
+
+        return true
+    end
+
+    if not messageBinds[bind] then return end 
 
     -- Don't open if playable piano is blocking input
     if IsValid( LocalPlayer().Instrument ) then return end
