@@ -496,7 +496,7 @@ end
 local function CustomChat_OnChatText( _, _, text, textType )
     if textType == "chat" then return end
 
-    local canShowJoinLeave = not ( CustomChat.JoinLeave.showConnect or CustomChat.JoinLeave.showDisconnect )
+    local canShowJoinLeave = not ( CustomChat.JoinLeave.showConnect or CustomChat.JoinLeave.showDisconnect)
     if not canShowJoinLeave and textType == "joinleave" then return end
 
     CustomChat:AddMessage( { Color( 0, 128, 255 ), text } )
@@ -545,8 +545,6 @@ local function CustomChat_HUDShouldDraw( name )
     if name == "CHudChat" then return false end
 end
 
-local isGamePaused = false
-
 local function CustomChat_Think()
     if not CustomChat.frame then return end
 
@@ -557,7 +555,7 @@ end
 
 local function CustomChat_OnPauseMenuShow()
     if not CustomChat.frame then return end
-    
+
     if CustomChat.frame:IsVisible() then
         CustomChat.frame:SetVisible( false )
 
@@ -685,6 +683,8 @@ hook.Add( "NetPrefs_OnChange", "CustomChat.OnServerConfigChange", function( key,
         JoinLeave.leaveColor = data.connection.leaveColor
         JoinLeave.leavePrefix = data.connection.leavePrefix
         JoinLeave.leaveSuffix = data.connection.leaveSuffix
+
+        JoinLeave.botConnectDisconnect = data.connection.botConnectDisconnect
     end
 end )
 
