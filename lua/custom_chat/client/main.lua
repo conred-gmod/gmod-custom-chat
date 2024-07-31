@@ -238,7 +238,7 @@ function CustomChat:AddMessage( contents, channelId )
         local mode = self.LocalChat:GetMode(localMode)
 
         table.insert(contents, 1, Color(120, 210, 255))
-        table.insert(contents, 2, "(–õ–æ–∫–∞–ª—å–Ω—ã–π) ")
+        table.insert(contents, 2, "(ÀÓÍ‡Î¸Ì˚È) ")
     end
 
     if not self.frame.channels[channelId] then
@@ -550,22 +550,18 @@ local isGamePaused = false
 local function CustomChat_Think()
     if not CustomChat.frame then return end
 
-    -- Hide the chat box if the game is paused
-    if gui.IsGameUIVisible() then
-        if isGamePaused == false then
-            isGamePaused = true
+    if not gui.IsGameUIVisible() and not CustomChat.frame:IsVisible() then
+        CustomChat.frame:SetVisible( true )
+    end
+end
 
-            CustomChat.frame:SetVisible( false )
+local function CustomChat_OnPauseMenuShow()
+    if not CustomChat.frame then return end
+    
+    if CustomChat.frame:IsVisible() then
+        CustomChat.frame:SetVisible( false )
 
-            if CustomChat.frame.isChatOpen and not gui.IsConsoleVisible() then
-                chat.Close()
-            end
-        end
-    else
-        if isGamePaused == true then
-            isGamePaused = false
-            CustomChat.frame:SetVisible( true )
-        end
+        return false
     end
 end
 
@@ -578,6 +574,7 @@ function CustomChat:Enable()
     hook.Add( "PlayerBindPress", "CustomChat.OnPlayerBindPress", CustomChat_OnPlayerBindPress )
     hook.Add( "HUDShouldDraw", "CustomChat.HUDShouldDraw", CustomChat_HUDShouldDraw )
     hook.Add( "Think", "CustomChat.Think", CustomChat_Think )
+    hook.Add( "OnPauseMenuShow", "CustomChat.OnPauseMenuShow", CustomChat_OnPauseMenuShow )
 
     if IsValid( CustomChat.frame ) then
         CustomChat.frame:SetVisible( true )
@@ -597,6 +594,7 @@ function CustomChat:Disable()
     hook.Remove( "PlayerBindPress", "CustomChat.OnPlayerBindPress" )
     hook.Remove( "HUDShouldDraw", "CustomChat.HUDShouldDraw" )
     hook.Remove( "Think", "CustomChat.Think" )
+    hook.Remove( "OnPauseMenuShow", "CustomChat.OnPauseMenuShow" )
 
     chat.AddText = CustomChat.DefaultAddText
     chat.Close = CustomChat.DefaultClose
