@@ -4,7 +4,7 @@ CustomChat = CustomChat or {}
 CustomChat.DATA_DIR = "custom_chat/"
 
 -- Max. number of characters in a single message
-CustomChat.MAX_MESSAGE_LENGTH = 400
+CustomChat.MAX_MESSAGE_LENGTH = 2000
 
 -- Max. number of characters in a channel ID
 CustomChat.MAX_CHANNEL_ID_LENGTH = 200
