@@ -524,7 +524,7 @@ blocks["url"] = function( value, ctx )
 end
 
 blocks["hyperlink"] = function( value, ctx )
-    local label = string.match( value, "%[[%s%g]+%]" )
+    local label = string.match( value, "%[.+%]" )
     local url = string.match( value, "%(https?://[^'\">%s]+%)" )
 
     label = ChopEnds( label, 2 )
