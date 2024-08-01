@@ -238,7 +238,7 @@ function CustomChat:AddMessage( contents, channelId )
         local mode = self.LocalChat:GetMode(localMode)
 
         table.insert(contents, 1, Color(120, 210, 255))
-        table.insert(contents, 2, "(ÀÓÍ‡Î¸Ì˚È) ")
+        table.insert(contents, 2, "(–õ–æ–∫–∞–ª—å–Ω—ã–π) ")
     end
 
     if not self.frame.channels[channelId] then
@@ -548,24 +548,6 @@ local function CustomChat_HUDShouldDraw( name )
     if name == "CHudChat" then return false end
 end
 
-local function CustomChat_Think()
-    local frame = CustomChat.frame
-    if not frame then return end
-
-    if gui.IsGameUIVisible() then
-        if frame:IsVisible() then
-            -- Close and completely hide the chat
-            -- while the pause menu is visible
-            chat.Close()
-            frame:SetVisible( false )
-        end
-
-    elseif not frame:IsVisible() then
-        -- Make the chat visible otherwise
-        frame:SetVisible( true )
-    end
-end
-
 local function CustomChat_OnPauseMenuShow()
     if CustomChat.frame and CustomChat.isOpen then
         chat.Close()
@@ -582,7 +564,6 @@ function CustomChat:Enable()
     hook.Add( "ChatText", "CustomChat.OnChatText", CustomChat_OnChatText )
     hook.Add( "PlayerBindPress", "CustomChat.OnPlayerBindPress", CustomChat_OnPlayerBindPress )
     hook.Add( "HUDShouldDraw", "CustomChat.HUDShouldDraw", CustomChat_HUDShouldDraw )
-    hook.Add( "Think", "CustomChat.Think", CustomChat_Think )
     hook.Add( "OnPauseMenuShow", "CustomChat.OnPauseMenuShow", CustomChat_OnPauseMenuShow )
 
     if IsValid( CustomChat.frame ) then
@@ -602,7 +583,6 @@ function CustomChat:Disable()
     hook.Remove( "ChatText", "CustomChat.OnChatText" )
     hook.Remove( "PlayerBindPress", "CustomChat.OnPlayerBindPress" )
     hook.Remove( "HUDShouldDraw", "CustomChat.HUDShouldDraw" )
-    hook.Remove( "Think", "CustomChat.Think" )
     hook.Remove( "OnPauseMenuShow", "CustomChat.OnPauseMenuShow" )
 
     chat.AddText = CustomChat.DefaultAddText
