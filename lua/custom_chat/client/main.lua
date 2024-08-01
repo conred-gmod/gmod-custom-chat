@@ -472,6 +472,7 @@ local function CustomChat_Open( pcalled )
     CustomChat.frame:SetKeyboardInputEnabled( true )
     CustomChat.frame:OpenChat()
 
+    CustomChat.isOpen = true
     CustomChat.SetTyping( true )
 
     -- Make sure the gamemode and other addons know we are chatting
@@ -484,6 +485,8 @@ local function CustomChat_Close()
     CustomChat.frame:CloseChat()
     CustomChat.frame:SetMouseInputEnabled( false )
     CustomChat.frame:SetKeyboardInputEnabled( false )
+
+    CustomChat.isOpen = false
     CustomChat.SetTyping( false )
 
     gui.EnableScreenClicker( false )
@@ -496,7 +499,7 @@ end
 local function CustomChat_OnChatText( _, _, text, textType )
     if textType == "chat" then return end
 
-    local canShowJoinLeave = not ( CustomChat.JoinLeave.showConnect or CustomChat.JoinLeave.showDisconnect)
+    local canShowJoinLeave = not ( CustomChat.JoinLeave.showConnect or CustomChat.JoinLeave.showDisconnect )
     if not canShowJoinLeave and textType == "joinleave" then return end
 
     CustomChat:AddMessage( { Color( 0, 128, 255 ), text } )
@@ -546,18 +549,26 @@ local function CustomChat_HUDShouldDraw( name )
 end
 
 local function CustomChat_Think()
-    if not CustomChat.frame then return end
+    local frame = CustomChat.frame
+    if not frame then return end
 
-    if not gui.IsGameUIVisible() and not CustomChat.frame:IsVisible() then
-        CustomChat.frame:SetVisible( true )
+    if gui.IsGameUIVisible() then
+        if frame:IsVisible() then
+            -- Close and completely hide the chat
+            -- while the pause menu is visible
+            chat.Close()
+            frame:SetVisible( false )
+        end
+
+    elseif not frame:IsVisible() then
+        -- Make the chat visible otherwise
+        frame:SetVisible( true )
     end
 end
 
 local function CustomChat_OnPauseMenuShow()
-    if not CustomChat.frame then return end
-
-    if CustomChat.frame:IsVisible() then
-        CustomChat.frame:SetVisible( false )
+    if CustomChat.frame and CustomChat.isOpen then
+        chat.Close()
 
         return false
     end
