@@ -624,6 +624,10 @@ cvars.AddChangeCallback( "cl_drawhud", function( _, _, new )
     end
 end, "custom_chat_cl_drawhud_changed" )
 
+concommand.Add("say_local", function(_, _, _, argStr)
+    Say(argStr, nil, "default")
+end)
+
 hook.Add( "NetPrefs_OnChange", "CustomChat.OnServerConfigChange", function( key, value )
     if key == "customchat.emojis" then
         CustomChat.Print( "Received emojis from the server." )
