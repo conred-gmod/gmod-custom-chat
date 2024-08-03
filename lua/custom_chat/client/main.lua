@@ -517,10 +517,11 @@ local pattern_say = "say([^;]+)"
 local function CustomChat_OnPlayerBindPress( _, bind, pressed )
     if not pressed then return end
 
-    -- Transmit say* binds via CustomChat network message
+    -- Transmit say binds via CustomChat network message
     if string.match(bind, pattern_say) then
         local binds = Split(bind, ";")
         for i = 1, #binds do
+            -- Don't do anything if there is another binds, so text will not be sent twice
             if binds[i] ~= "say" then return end
         end
 
