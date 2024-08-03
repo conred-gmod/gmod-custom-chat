@@ -512,15 +512,21 @@ local messageBinds = {
     ["messagemode2"] = true,
 }
 
+local pattern_say = "say([^;]+)"
+
 local function CustomChat_OnPlayerBindPress( _, bind, pressed )
     if not pressed then return end
 
     -- Transmit say* binds via CustomChat network message
-    local parts = Split(bind, " ")
-    if parts[1]:sub(1, 3) == "say" then
-        table.remove(parts, 1) -- remove command
+    if string.match(bind, pattern_say) then
+        local binds = Split(bind, ";")
+        for i = 1, #binds do
+            if binds[i] ~= "say" then return end
+        end
 
-        Say(table.concat(parts, " "))
+        for s in string.gmatch(bind, pattern_say) do
+            Say(s)
+        end
 
         return true
     end
