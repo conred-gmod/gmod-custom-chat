@@ -8,9 +8,6 @@ CustomChat.LocalChat = LocalChat
 local get_player_distance = function( ply )
     return ply:GetInfoNum("custom_chat_local_default_distance", 300)
 end
-local get_player_distance_squared = function( ply )
-    return get_player_distance( ply ) ^ 2
-end
 
 if CLIENT then
     CreateClientConVar( "custom_chat_local_default_distance", 300, true, true, nil, 150, 1000 )
@@ -36,16 +33,17 @@ function LocalChat:CreateMode( id, name, distance )
     end
 
     mode.name = name
-    mode.getDistance = isfunction(distance) and distance or function() return distance ^ 2 end
+    mode.getDistance = isfunction(distance) and distance or function() return distance end
+    mode.getDistanceSquared = function( ply ) return mode.getDistance( ply ) ^ 2 end
 
     self.Modes[id] = mode
 end
 
 
-LocalChat:CreateMode( "default", "Сказать", get_player_distance_squared )
+LocalChat:CreateMode( "default", "Сказать", get_player_distance )
 
 LocalChat:CreateMode( "yell", "Крикнуть", function( ply )
-    return math.min( get_player_distance(ply) * 2, 1500 ) ^ 2
+    return math.min( get_player_distance( ply ) * 2, 1500 )
 end )
 
 LocalChat:CreateMode( "whisper", "Шептать", 50 )
@@ -57,6 +55,6 @@ if SERVER then
         
         local mode = LocalChat:GetMode( localMode )
 
-        return speaker:GetPos():DistToSqr( listener:GetPos() ) <= mode.getDistance( speaker )
+        return speaker:GetPos():DistToSqr( listener:GetPos() ) <= mode.getDistanceSquared( speaker )
     end )
 end
