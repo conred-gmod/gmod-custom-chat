@@ -578,3 +578,7 @@ blocks["advert"] = function( value, ctx )
 
     return table.concat( lines, "\n" )
 end
+
+blocks["avatar"] = function( value, ctx )
+    return Create.Image( value, nil, "avatar" )
+end
