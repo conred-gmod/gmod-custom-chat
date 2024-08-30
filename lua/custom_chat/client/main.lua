@@ -557,6 +557,22 @@ local function CustomChat_HUDShouldDraw( name )
     if name == "CHudChat" then return false end
 end
 
+local function CustomChat_Think()
+    local frame = CustomChat.frame
+    if not frame then return end
+
+    local swep = LocalPlayer():GetActiveWeapon()
+    if not IsValid(swep) then return end
+
+    if not CustomChat.isOpen and swep:GetClass() == "gmod_camera" then
+        if frame:IsVisible() then
+            frame:SetVisible( false )
+        end
+    elseif not frame:IsVisible() then
+        frame:SetVisible( true )
+    end
+end
+
 local function CustomChat_OnPauseMenuShow()
     if CustomChat.frame and CustomChat.isOpen then
         chat.Close()
@@ -573,6 +589,7 @@ function CustomChat:Enable()
     hook.Add( "ChatText", "CustomChat.OnChatText", CustomChat_OnChatText )
     hook.Add( "PlayerBindPress", "CustomChat.OnPlayerBindPress", CustomChat_OnPlayerBindPress )
     hook.Add( "HUDShouldDraw", "CustomChat.HUDShouldDraw", CustomChat_HUDShouldDraw )
+    hook.Add( "Think", "CustomChat.Think", CustomChat_Think )
     hook.Add( "OnPauseMenuShow", "CustomChat.OnPauseMenuShow", CustomChat_OnPauseMenuShow )
 
     if IsValid( CustomChat.frame ) then
@@ -592,6 +609,7 @@ function CustomChat:Disable()
     hook.Remove( "ChatText", "CustomChat.OnChatText" )
     hook.Remove( "PlayerBindPress", "CustomChat.OnPlayerBindPress" )
     hook.Remove( "HUDShouldDraw", "CustomChat.HUDShouldDraw" )
+    hook.Remove( "Think", "CustomChat.Think" )
     hook.Remove( "OnPauseMenuShow", "CustomChat.OnPauseMenuShow" )
 
     chat.AddText = CustomChat.DefaultAddText
