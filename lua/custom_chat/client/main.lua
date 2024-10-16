@@ -486,7 +486,7 @@ local function CustomChat_Close()
     CustomChat.SetTyping( false )
 
     gui.EnableScreenClicker( false )
-    gui.HideGameUI()
+    -- gui.HideGameUI()
 
     hook.Run( "FinishChat" )
     hook.Run( "ChatTextChanged", "" )
