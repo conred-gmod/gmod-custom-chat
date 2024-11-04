@@ -16,8 +16,8 @@ function Config:Reset()
 end
 
 function Config:ResetDefaultPosition()
-    self.offsetLeft = -1
-    self.offsetBottom = -1
+    self.offsetLeft = 10
+    self.offsetBottom = 80
 end
 
 function Config:GetDefaultPosition()
@@ -28,7 +28,7 @@ function Config:GetDefaultPosition()
 end
 
 function Config:GetDefaultSize()
-    return 550, 260
+    return 860, 430
 end
 
 function Config:SetWhitelistEnabled( enabled )
