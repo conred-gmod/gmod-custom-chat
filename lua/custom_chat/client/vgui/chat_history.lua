@@ -374,6 +374,7 @@ var channels = {};
 var lastEmojiScroll = 0;
 
 function RemoveElement(el) {
+    if (!el.parentElement) return;
     el.parentElement.removeChild(el);
 }
 
@@ -517,7 +518,7 @@ function OnSelectEmoji(test) {
 
 var elementNotification = null;
 function Notify(text, time) {
-    if (elementNotification !== null) {
+    if (elementNotification) {
         RemoveElement(elementNotification);
     }
 
