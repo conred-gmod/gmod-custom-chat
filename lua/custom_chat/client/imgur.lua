@@ -1,6 +1,5 @@
-local Imgur = CustomChat.Imgur or {
-    KEY = "c148510ba377a90"
-}
+local Imgur = CustomChat.Imgur or {}
+Imgur.ClientId = "04d544c587b6e4e"
 
 CustomChat.Imgur = Imgur
 
@@ -60,7 +59,7 @@ function Imgur:Upload(base64, callback)
             callback(false) 
         end,
         {
-            ["Authorization"] = "Client-ID " .. self.KEY
+            ["Authorization"] = "Client-ID " .. self.ClientId
         }
     )
 
