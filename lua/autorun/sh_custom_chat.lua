@@ -197,6 +197,7 @@ if SERVER then
     include( "custom_chat/server/net_config.lua" )
     include( "custom_chat/server/net_messages.lua" )
     include( "custom_chat/server/player_spawn.lua" )
+    include( "custom_chat/server/join_leave.lua" )
     include( "custom_chat/server/override_say.lua" )
 
     -- Client files

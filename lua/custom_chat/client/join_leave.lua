@@ -15,72 +15,6 @@ local JoinLeave = CustomChat.JoinLeave or {
 
 CustomChat.JoinLeave = JoinLeave
 
-gameevent.Listen( "player_connect_client" )
-gameevent.Listen( "player_disconnect" )
-
-hook.Add( "player_connect_client", "CustomChat.ShowConnectMessages", function( data )
-    if not JoinLeave.showConnect then return end
-
-    local c = JoinLeave.joinColor
-    local name = data.name
-    local steamId = data.networkid
-    local isBot = data.bot == 1
-
-    if isBot and not JoinLeave.botConnectDisconnect then return end
-
-    -- Only use a player block if Custom Chat is enabled
-    if CustomChat.IsEnabled() then
-        name = {
-            blockType = "player",
-            blockValue = {
-                name = data.name,
-                id = steamId,
-                id64 = util.SteamIDTo64( steamId ),
-                isBot = isBot
-            }
-        }
-    end
-
-    chat.AddText(
-        Color( 255, 255, 255 ), JoinLeave.joinPrefix,
-        Color( c[1], c[2], c[3] ), name,
-        Color( 150, 150, 150 ), " <" .. steamId .. "> ",
-        Color( 255, 255, 255 ), JoinLeave.joinSuffix
-    )
-end, HOOK_LOW )
-
-hook.Add( "player_disconnect", "CustomChat.ShowDisconnectMessages", function( data )
-    if not JoinLeave.showDisconnect then return end
-
-    local c = JoinLeave.leaveColor
-    local name = data.name
-    local steamId = data.networkid
-    local isBot = data.bot == 1
-
-    if isBot and not JoinLeave.botConnectDisconnect then return end
-
-    -- Only use a player block if Custom Chat is enabled
-    if CustomChat.IsEnabled() then
-        name = {
-            blockType = "player",
-            blockValue = {
-                name = data.name,
-                id = steamId,
-                id64 = util.SteamIDTo64( steamId ),
-                isBot = isBot
-            }
-        }
-    end
-
-    chat.AddText(
-        Color( 255, 255, 255 ), JoinLeave.leavePrefix,
-        Color( c[1], c[2], c[3] ), name,
-        Color( 150, 150, 150 ), " <" .. steamId .. "> ",
-        Color( 255, 255, 255 ), JoinLeave.leaveSuffix,
-        Color( 150, 150, 150 ), " (" .. data.reason .. ")"
-    )
-end, HOOK_LOW )
-
 local function OnPlayerActivated( ply, steamId, name, color, absenceLength )
     if ply:IsBot() and not JoinLeave.botConnectDisconnect then return end
 
@@ -144,3 +78,66 @@ net.Receive( "customchat.player_spawned", function()
     end )
 end )
 
+net.Receive( "customchat.player_connect", function()
+    if not JoinLeave.showConnect then return end
+
+    local c = JoinLeave.joinColor
+    local name = net.ReadString()
+    local steamId = net.ReadString()
+    local isBot = net.ReadBool()
+
+    if isBot and not JoinLeave.botConnectDisconnect then return end
+
+    -- Only use a player block if Custom Chat is enabled
+    if CustomChat.IsEnabled() then
+        name = {
+            blockType = "player",
+            blockValue = {
+                name = name,
+                id = steamId,
+                id64 = util.SteamIDTo64( steamId ),
+                isBot = isBot
+            }
+        }
+    end
+
+    chat.AddText(
+        Color( 255, 255, 255 ), JoinLeave.joinPrefix,
+        Color( c[1], c[2], c[3] ), name,
+        Color( 150, 150, 150 ), " <" .. steamId .. "> ",
+        Color( 255, 255, 255 ), JoinLeave.joinSuffix
+    )
+end )
+
+net.Receive( "customchat.player_disconnect", function()
+    if not JoinLeave.showDisconnect then return end
+
+    local c = JoinLeave.leaveColor
+    local name = net.ReadString()
+    local steamId = net.ReadString()
+    local isBot = net.ReadBool()
+    local reason = net.ReadString()
+
+    if isBot and not JoinLeave.botConnectDisconnect then return end
+
+    -- Only use a player block if Custom Chat is enabled
+    if CustomChat.IsEnabled() then
+        name = {
+            blockType = "player",
+            blockValue = {
+                name = name,
+                id = steamId,
+                id64 = util.SteamIDTo64( steamId ),
+                isBot = isBot
+            }
+        }
+    end
+
+    chat.AddText(
+        Color( 255, 255, 255 ), JoinLeave.leavePrefix,
+        Color( c[1], c[2], c[3] ), name,
+        Color( 150, 150, 150 ), " <" .. steamId .. "> ",
+        Color( 255, 255, 255 ), JoinLeave.leaveSuffix,
+        Color( 150, 150, 150 ), " (" .. reason .. ")"
+    )
+end )
