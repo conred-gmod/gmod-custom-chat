@@ -1,5 +1,6 @@
 local Find = string.find
 local Substring = string.sub
+local Match = string.match
 
 --[[
     Find patterns on strings, and turns them into "blocks"
@@ -15,11 +16,12 @@ local rangeTypes = {
     { type = "italic", pattern = "%*[^%c][^%*]+%*" },
     { type = "bold", pattern = "%*%*[^%c][^%*]+%*%*" },
     { type = "bold_italic", pattern = "%*%*%*[^%c][^%*]+%*%*%*" },
-    { type = "color", pattern = "<(%d+,%d+,%d+)>", get_value = function(v) return v:match("%d+,%d+,%d+") end },
-    { type = "color", pattern = "<color=(%d+,%d+,%d+)>", get_value = function(v) return v:match("color=(%d+,%d+,%d+)") end },
+    { type = "color", pattern = "<(%d+,%d+,%d+)>", match = "%d+,%d+,%d+"},
+    { type = "color", pattern = "<color=(%d+,%d+,%d+)>", match = "%d+,%d+,%d+" },
     { type = "rainbow", pattern = "%$%$[^%c]+%$%$" },
     { type = "advert", pattern = "%[%[[^%c]+%]%]" },
-    { type = "emoji", pattern = ":[%w_%-]+:" },
+    { type = "emoji", pattern = ":[%w_%-]+:", match = "[%w_%-]+" },
+    { type = "emoji", pattern = "<emote=([%w_%-]+),-%d->", match = "emote=([%w_%-]+)" },
     { type = "spoiler", pattern = "||[^%c]-[^|]*||" },
     { type = "code_line", pattern = "`[^%c]+[`]*`" },
     { type = "code", pattern = "{{[^%z]-[^}}]*}}" },
@@ -41,7 +43,7 @@ local function FindAllRangesOfType( rangeType, str )
         pStart, pEnd = Find( str, rangeType.pattern, pStart )
 
         if pStart then
-            ranges[#ranges + 1] = { s = pStart, e = pEnd, type = rangeType.type, get_value = rangeType.get_value }
+            ranges[#ranges + 1] = { s = pStart, e = pEnd, type = rangeType.type, match = rangeType.match }
             pStart = pEnd
         end
     end
@@ -62,7 +64,7 @@ local function MergeRangeInto( tbl, range )
     end
 
     -- Include the new range
-    newTbl[#newTbl + 1] = { s = range.s, e = range.e, type = range.type, value = range.value, get_value = range.get_value }
+    newTbl[#newTbl + 1] = { s = range.s, e = range.e, type = range.type, value = range.value, match = range.match }
 
     return newTbl
 end
@@ -111,8 +113,12 @@ function CustomChat.ParseString( str, outFunc )
         -- Use where it starts/ends on the string as the value
         local value = Substring( str, r.s, r.e )
 
+        if r.match ~= nil then
+            value = Match( value, r.match )
+        end
+
         if value ~= "" then
-            outFunc( r.type, r.get_value ~= nil and r.get_value(value) or value )
+            outFunc( r.type, value )
         end
     end
 
