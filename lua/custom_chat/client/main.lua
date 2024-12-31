@@ -122,10 +122,7 @@ CustomChat.ResetChatbox()
 
 local Config = CustomChat.Config
 
-function Say( text, channel, localMode )
-    local text_transformed = hook.Run( "TransformChatText", text )
-    if isstring(text_transformed) then text = text_transformed end
-
+local function Say( text, channel, localMode )    
     local message = CustomChat.ToJSON( {
         channel = channel or "global",
         localMode = localMode,
@@ -136,6 +133,7 @@ function Say( text, channel, localMode )
     net.WriteString( message )
     net.SendToServer()
 end
+CustomChat.Say = Say
 
 function CustomChat:CreateFrame()
     self.frame = vgui.Create( "CustomChat_Frame" )
@@ -623,10 +621,6 @@ cvars.AddChangeCallback( "cl_drawhud", function( _, _, new )
         CustomChat.frame.history:ClearTemporaryMessages()
     end
 end, "custom_chat_cl_drawhud_changed" )
-
-concommand.Add("say_local", function(_, _, _, argStr)
-    Say(argStr, nil, "default")
-end)
 
 hook.Add( "NetPrefs_OnChange", "CustomChat.OnServerConfigChange", function( key, value )
     if key == "customchat.emojis" then

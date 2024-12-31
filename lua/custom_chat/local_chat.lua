@@ -5,7 +5,7 @@ local LocalChat = CustomChat.LocalChat or {
 CustomChat.LocalChat = LocalChat
 
 
-local get_player_distance = function( ply )
+local GetPlayerDistance = function( ply )
     return ply:GetInfoNum("custom_chat_local_default_distance", 300)
 end
 
@@ -13,6 +13,10 @@ if CLIENT then
     CreateClientConVar( "custom_chat_local_default_distance", 300, true, true, nil, 150, 1000 )
     CreateClientConVar( "custom_chat_secondary_local", 1 )
     CreateClientConVar( "custom_chat_always_local", 0 )
+
+    concommand.Add("say_local", function(_, _, _, argStr)
+        CustomChat.Say(argStr, nil, "default")
+    end)
 end
 
 
@@ -40,10 +44,10 @@ function LocalChat:CreateMode( id, name, distance )
 end
 
 
-LocalChat:CreateMode( "default", "Сказать", get_player_distance )
+LocalChat:CreateMode( "default", "Сказать", GetPlayerDistance )
 
 LocalChat:CreateMode( "yell", "Крикнуть", function( ply )
-    return math.min( get_player_distance( ply ) * 2, 1500 )
+    return math.min( GetPlayerDistance( ply ) * 2, 1500 )
 end )
 
 LocalChat:CreateMode( "whisper", "Шептать", 50 )
