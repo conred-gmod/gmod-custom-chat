@@ -101,7 +101,7 @@ function CustomChat.Say( speaker, text, channel, localMode )
     end
     
     text = CustomChat.CleanupString( text )
-    text = hook.Run( "PlayerSay", speaker, text, teamOnly, channel ) or text
+    text = hook.Run( "PlayerSay", speaker, text, teamOnly, channel, localMode ) or text
     
     if not IsStringValid( text ) then return end
     
