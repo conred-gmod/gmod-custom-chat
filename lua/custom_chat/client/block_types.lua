@@ -18,6 +18,7 @@ if BRANCH == "unknown" then
     forceHTTP = {
         ["avatars.cloudflare.steamstatic.com"] = true,
         ["avatars.akamai.steamstatic.com"] = true,
+        ["avatars.fastly.steamstatic.com"] = true,
         ["media.discordapp.net"] = true,
         ["cdn.discordapp.com"] = true -- seems like it still does not work
     }
@@ -279,6 +280,41 @@ function Create.Embed( url, panel )
     return table.concat( lines, "\n" )
 end
 
+--- Returns JS code that creates gradient text
+function Create.Gradient( text, font, colorA, colorB, elementName )
+    elementName = elementName or "elGradient"
+
+    -- Gradient container/glow
+    local lines = { Create.Element( "span", elementName ) }
+    Append( lines, "%s.className = 'gradient-container';", elementName )
+    Append( lines, "%s.textContent = '%s';", elementName, text )
+
+    -- Use the combined colors for the glow effect
+    local h, s, l = ColorToHSL( Color(
+        ( colorA.r + colorB.r ) * 0.5,
+        ( colorA.g + colorB.g ) * 0.5,
+        ( colorA.b + colorB.b ) * 0.5
+    ) )
+
+    local colorGlow = ColorToRGB( HSLToColor( h, s, l * 0.5 ) )
+
+    Append( lines, "%s.style.color = '%s';", elementName, colorGlow )
+    Append( lines, "%s.style.textShadow = '0px 0px 0.2em %s';", elementName, colorGlow )
+
+    -- Gradient foreground/text
+    Append( lines, Create.Element( "span", "elGradientText", elementName ) )
+    Append( lines, "elGradientText.className = 'gradient-fg';" )
+    Append( lines, "elGradientText.textContent = '%s';", text )
+    Append( lines, "elGradientText.style.backgroundImage = '-webkit-linear-gradient(left, %s, %s)';", ColorToRGB( colorA ), ColorToRGB( colorB ) )
+
+    if IsStringValid( font ) then
+        Append( lines, "%s.style.fontFamily = '%s';", elementName, font )
+        Append( lines, "elGradientText.style.fontFamily = '%s';", font )
+    end
+
+    return table.concat( lines, "\n" )
+end
+
 --[[
     Steam avatar fetcher
 ]]
@@ -430,14 +466,60 @@ blocks["string"] = function( value, ctx )
 end
 
 blocks["player"] = function( value, ctx )
-    local lines = {}
+    local colors = { ctx.color }
 
-    if not value.isBot and ctx.panel.displayAvatars then
-        lines[#lines + 1] = Create.Image( CustomChat.FetchUserAvatarURL( value.id64, ctx.panel ), nil, "avatar ply-" .. value.id64 )
+    -- Get the player name color(s)
+    if IsValid( value.ply ) then
+        if CustomChat.USE_TAGS then
+            local nameColor = CustomChat.Tags:GetNameColor( value.ply )
+            if nameColor then colors[1] = nameColor end
+
+        elseif value.ply.getChatTag then
+            -- aTags support
+            local _, _, nameColor = value.ply:getChatTag()
+            if nameColor then colors[1] = nameColor end
+        end
+
+        local colorA, colorB = hook.Run( "OverrideCustomChatPlayerColor", value.ply )
+
+        if IsColor( colorA ) then
+            colors[1] = colorA
+
+            if IsColor( colorB ) then
+                colors[2] = colorB
+            end
+        end
     end
 
-    lines[#lines + 1] = Create.Element( "span", "elPlayer" )
-    Append( lines, "elPlayer.textContent = '%s';", SafeString( value.name ) )
+    local lines = {}
+
+    -- Create avatar image
+    if not value.isBot and ctx.panel.displayAvatars then
+        lines[#lines + 1] = Create.Image( CustomChat.FetchUserAvatarURL( value.id64, ctx.panel ), nil, "avatar ply-" .. value.id64 )
+
+        if colors[1] then
+            Append( lines, "elImg.style['border-color'] = '%s';", ColorToRGB( colors[1] ) )
+        end
+    end
+
+    local name = SafeString( value.name )
+
+    if #colors > 1 then
+        -- If we have more than one color, create a gradient
+        lines[#lines + 1] = Create.Gradient( name, ctx.font, colors[1], colors[2], "elPlayer" )
+    else
+        -- Otherwise create a regular text element
+        lines[#lines + 1] = Create.Element( "span", "elPlayer" )
+        Append( lines, "elPlayer.textContent = '%s';", name )
+
+        if IsStringValid( ctx.font ) then
+            Append( lines, "elPlayer.style.fontFamily = '%s';", ctx.font )
+        end
+
+        if colors[1] then
+            Append( lines, "elPlayer.style.color = '%s';", ColorToRGB( colors[1] ) )
+        end
+    end
 
     if not value.isBot then
         Append( lines, "elPlayer._playerData = '%s';", util.TableToJSON( {
@@ -447,32 +529,6 @@ blocks["player"] = function( value, ctx )
 
         Append( lines, "elPlayer.style.cursor = 'pointer';" )
         Append( lines, "elPlayer.clickableText = true;" )
-    end
-
-    if IsStringValid( ctx.font ) then
-        Append( lines, "elPlayer.style.fontFamily = '%s';", ctx.font )
-    end
-
-    local color = ctx.color
-
-    if IsValid( value.ply ) then
-        if CustomChat.USE_TAGS then
-            local nameColor = CustomChat.Tags:GetNameColor( value.ply )
-            if nameColor then color = nameColor end
-
-        elseif value.ply.getChatTag then
-            -- aTags support
-            local _, _, nameColor = value.ply:getChatTag()
-            if nameColor then color = nameColor end
-        end
-    end
-
-    if color then
-        Append( lines, "elPlayer.style.color = '%s';", ColorToRGB( color ) )
-
-        if ctx.panel.displayAvatars then
-            Append( lines, "elImg.style['border-color'] = '%s';", ColorToRGB( color ) )
-        end
     end
 
     return table.concat( lines, "\n" )
@@ -578,4 +634,21 @@ end
 
 blocks["avatar"] = function( value, ctx )
     return Create.Image( value, nil, "avatar" )
+end
+
+local function ParseComponent( str )
+    return math.Clamp( tonumber( str ) or 0, 0, 255 )
+end
+
+blocks["gradient"] = function( value, ctx )
+    local components = ChopEnds( string.match( value, "%$%d+,%d+,%d+%,%d+,%d+,%d+%$" ), 2 )
+    local text = ChopEnds( string.match( value, "%([^%c]+%)" ), 2 )
+
+    components = string.Explode( ",", components, false )
+    text = SafeString( text )
+
+    local colorA = Color( ParseComponent( components[1] ), ParseComponent( components[2] ), ParseComponent( components[3] ) )
+    local colorB = Color( ParseComponent( components[4] ), ParseComponent( components[5] ), ParseComponent( components[6] ) )
+
+    return Create.Gradient( text, ctx.font, colorA, colorB )
 end

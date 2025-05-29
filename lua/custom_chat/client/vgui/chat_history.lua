@@ -358,6 +358,29 @@ img {
     -webkit-animation: wk_anim_rainbow 2s linear infinite;
     animation: ch_anim_rainbow 2s linear infinite;
 }
+
+.gradient-container {
+    position: relative;
+    color: blue;
+    text-shadow: 0px 0px 0.15em blue;
+}
+
+.gradient-fg {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    top: 0;
+    left: 0;
+    z-index: 10;
+
+    background-image: -webkit-linear-gradient(left, #ffffff, #ffffff);
+    text-shadow: none;
+    color: transparent;
+
+    -webkit-background-clip: text;
+    background-clip: text;
+    background-size: 100% 100%;
+}
 </style>
 
 <script>
