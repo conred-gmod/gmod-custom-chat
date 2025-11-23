@@ -73,8 +73,15 @@ CreateConVar( "custom_chat_enable_friend_messages", "1", bit.bor( FCVAR_ARCHIVE,
 CreateConVar( "custom_chat_enable_dms", "1", bit.bor( FCVAR_ARCHIVE, FCVAR_REPLICATED, FCVAR_NOTIFY ),
     "Allow players to chat with eachother privately.", 0, 1 )
 
-CreateConVar( "custom_chat_enable_team_channel", "1", bit.bor( FCVAR_ARCHIVE, FCVAR_REPLICATED, FCVAR_NOTIFY ),
-    "Enable team channel.", 0, 1 )
+CreateConVar( "custom_chat_always_allow_embeds", "0", bit.bor( FCVAR_ARCHIVE, FCVAR_REPLICATED, FCVAR_NOTIFY ),
+    "Allows embeds to be displayed on the chat, even if the message did not come from a player.", 0, 1 )
+
+if CLIENT then
+    CreateClientConVar( "custom_chat_enable", "1", true, false )
+
+    CreateClientConVar( "custom_chat_show_steamid_on_join_leave", "0", true, false,
+        "Should the SteamID be visible when showing join/leave messages?", 0, 1 )
+end
 
 function CustomChat.Print( str, ... )
     MsgC( Color( 0, 123, 255 ), "[Custom Chat] ", Color( 255, 255, 255 ), string.format( str, ... ), "\n" )
@@ -83,6 +90,11 @@ end
 function CustomChat.GetConVarInt( name, default )
     local cvar = GetConVar( "custom_chat_" .. name )
     return cvar and cvar:GetInt() or default
+end
+
+function CustomChat.GetConVarBool( name )
+    local cvar = GetConVar( "custom_chat_" .. name )
+    return cvar and cvar:GetBool()
 end
 
 function CustomChat.ToJSON( tbl )

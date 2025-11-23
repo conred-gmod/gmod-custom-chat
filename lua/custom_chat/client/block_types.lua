@@ -12,7 +12,7 @@ local IsStringValid = CustomChat.IsStringValid
 -- Force plain HTTP for certain image links when Chromium is not in use
 local forceHTTP
 
-if BRANCH == "unknown" then
+if system.IsLinux() and BRANCH ~= "x86-64" then
     CustomChat.Print( "Not using Chromium, enforcing plain HTTP for some image links." )
 
     forceHTTP = {
@@ -534,6 +534,20 @@ blocks["player"] = function( value, ctx )
     return table.concat( lines, "\n" )
 end
 
+blocks["avatar_image"] = function( value, ctx )
+    if not ctx.panel.displayAvatars then return "" end
+    if not IsStringValid( value ) then return "" end
+
+    local url = SafeString( value )
+    local lines = { Create.Image( url, nil, "avatar" ) }
+
+    if ctx.color then
+        Append( lines, "elImg.style['border-color'] = '%s';", ColorToRGB( ctx.color ) )
+    end
+
+    return table.concat( lines, "\n" )
+end
+
 blocks["emoji"] = function( value, ctx )
     local url = CustomChat.GetEmojiURL( value )
 
@@ -556,12 +570,17 @@ blocks["model"] = function( value, ctx )
 end
 
 blocks["url"] = function( value, ctx )
-    local urlType = GetURLType( value )
-    local canEmbed = false
+    local dontEmbed = value:sub( 1, 1 ) == "<"
 
+    if dontEmbed then
+        value = ChopEnds( value, 2 )
+    end
+
+    local urlType = GetURLType( value )
+    local canEmbed = not dontEmbed and CustomChat.GetConVarInt( "always_allow_embeds", 0 ) > 0
     local lastMessage = CustomChat.lastReceivedMessage
 
-    if lastMessage and IsValid( lastMessage.speaker ) then
+    if not dontEmbed and lastMessage and IsValid( lastMessage.speaker ) then
         canEmbed = hook.Run( "CanEmbedCustomChat", lastMessage.speaker, value, urlType ) ~= false
     end
 

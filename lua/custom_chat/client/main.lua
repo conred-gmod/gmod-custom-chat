@@ -1,5 +1,3 @@
-CreateClientConVar( "custom_chat_enable", "1", true, false )
-
 -- Keep track of the original chat functions
 CustomChat.DefaultOpen = CustomChat.DefaultOpen or chat.Open
 CustomChat.DefaultClose = CustomChat.DefaultClose or chat.Close
@@ -510,12 +508,14 @@ local function CustomChat_Close()
 end
 
 local function CustomChat_OnChatText( _, _, text, textType )
-    if textType == "chat" then return end
-
     local canShowJoinLeave = not ( CustomChat.JoinLeave.showConnect or CustomChat.JoinLeave.showDisconnect )
     if not canShowJoinLeave and textType == "joinleave" then return end
 
     CustomChat:AddMessage( { Color( 0, 128, 255 ), text } )
+
+    if textType ~= "chat" then
+        MsgC( Color( 0, 128, 255 ), text, "\n" )
+    end
 
     return true
 end
@@ -716,4 +716,24 @@ net.Receive( "customchat.say", function()
     hook.Run( "OnPlayerChat", speaker, message.text, message.channel == "team", not speaker:Alive(), message.localMode )
 
     CustomChat.lastReceivedMessage = nil
+end )
+
+hook.Add( "InitPostEntity", "CustomChat.PostInit", function()
+    if not aTags then
+        CustomChat.USE_TAGS = true
+    end
+
+    hook.Add( "OnPlayerChat", "CustomChat.PreprocessPlayerChat", function( ply, text, isTeam, isDead )
+        -- Make sure the `lastReceivedMessage` table exists when
+        -- the `OnPlayerChat` hook runs due to the "say" console command.
+        CustomChat.lastReceivedMessage = CustomChat.lastReceivedMessage or {
+            speaker = ply,
+            text = text,
+            channel = "global"
+        }
+
+        if CustomChat.USE_TAGS then
+            return CustomChat.Tags:AddMessageWithCustomTags( ply, text, isTeam, isDead )
+        end
+    end, HOOK_LOW )
 end )

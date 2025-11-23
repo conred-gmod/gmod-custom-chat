@@ -10,6 +10,7 @@ local Match = string.match
 local rangeTypes = {
     { type = "url", pattern = "asset://[^%s%\"%>%<%!]+" },
     { type = "url", pattern = "https?://[^%s%\"%>%<%!]+" },
+    { type = "url", pattern = "<https?://[^%s%\"%>%<%!]+>" },
     { type = "hyperlink", pattern = "%[[^%c]-[^%[%]]*%]%(https?://[^'\">%s]+%)" },
     { type = "gradient", pattern = "%$%d+,%d+,%d+%,%d+,%d+,%d+%$%([^%c]+%)" },
     { type = "model", pattern = "models/[%w_/]+.mdl" },
@@ -119,7 +120,15 @@ function CustomChat.ParseString( str, outFunc )
         end
 
         if value ~= "" then
-            outFunc( r.type, value )
+            local formatType = r.type
+
+            if CustomChat.lastReceivedMessage then
+                local canFormat = hook.Run( "CanFormatCustomChat", CustomChat.lastReceivedMessage.speaker, r.type, value )
+                if canFormat == false then
+                    formatType = "string"
+                end
+            end
+            outFunc( formatType, value )
         end
     end
 

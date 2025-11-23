@@ -75,9 +75,6 @@ local whitelist = {
     simple [[i.redd.it]],
     simple [[preview.redd.it]],
 
-    -- Furry things
-    simple [[static1.e621.net]],
-
     -- ipfs
     simple [[ipfs.io]],
 
@@ -136,7 +133,10 @@ local whitelist = {
 
     -- Revolt
     simple [[static.revolt.chat]],
-    simple [[autumn.revolt.chat]]
+    simple [[autumn.revolt.chat]],
+
+    -- Catbox
+    simple [[files.catbox.moe]],
 }
 
 function CustomChat.IsWhitelisted( url )

@@ -29,7 +29,7 @@ function Tags:GetNameColor( ply )
     return GAMEMODE:GetTeamColor( ply )
 end
 
-local function CustomChat_AddCustomTags( ply, text, isTeam, isDead )
+function Tags:AddMessageWithCustomTags( ply, text, isTeam, isDead )
     if not IsValid( ply ) or not ply:IsPlayer() then return end
 
     local parts = Tags:GetParts( ply )
@@ -44,7 +44,9 @@ local function CustomChat_AddCustomTags( ply, text, isTeam, isDead )
         end
     end
 
-    if not parts and not customParts then return end
+    if not parts and not customParts then
+        return
+    end
 
     local message = {}
 
@@ -92,13 +94,6 @@ local function CustomChat_AddCustomTags( ply, text, isTeam, isDead )
 
     return true
 end
-
-hook.Add( "InitPostEntity", "CustomChat.PreventChatTagsConflict", function()
-    if aTags then return end
-
-    CustomChat.USE_TAGS = true
-    hook.Add( "OnPlayerChat", "CustomChat.AddCustomTags", CustomChat_AddCustomTags, HOOK_LOW )
-end )
 
 function Tags:OpenEditor()
     local L = CustomChat.GetLanguageText

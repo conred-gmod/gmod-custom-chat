@@ -319,16 +319,18 @@ function PANEL:UpdateChannelList()
         channel.button = button
     end
 
-    local buttonOpenDM = vgui.Create( "DButton", self.channelList )
-    buttonOpenDM:SetText( "" )
-    buttonOpenDM:SetIcon( "icon16/add.png" )
-    buttonOpenDM:SetTall( 26 )
-    buttonOpenDM:SetTooltip( L"channel.open_dm" )
-    buttonOpenDM:SetPaintBackground( false )
-    buttonOpenDM:Dock( BOTTOM )
+    if CustomChat.GetConVarBool( "enable_dms" ) then
+        local buttonOpenDM = vgui.Create( "DButton", self.channelList )
+        buttonOpenDM:SetText( "" )
+        buttonOpenDM:SetIcon( "icon16/add.png" )
+        buttonOpenDM:SetTall( 26 )
+        buttonOpenDM:SetTooltip( L"channel.open_dm" )
+        buttonOpenDM:SetPaintBackground( false )
+        buttonOpenDM:Dock( BOTTOM )
 
-    buttonOpenDM.DoClick = function()
-        self:OpenDirectMessage()
+        buttonOpenDM.DoClick = function()
+            self:OpenDirectMessage()
+        end
     end
 end
 
@@ -351,7 +353,7 @@ function PANEL:OpenChat()
         self:SetActiveChannel( self.lastChannelId or "global" )
     end
 
-    if CustomChat.GetConVarInt( "enable_dms", 1 ) == 0 then
+    if not CustomChat.GetConVarBool( "enable_dms" ) then
         for id, channel in pairs( self.channels ) do
             if channel.isDM then
                 self:RemoveChannel( id )
@@ -625,7 +627,7 @@ function PANEL:SubmitMessage()
 end
 
 function PANEL:OpenDirectMessage()
-    if CustomChat.GetConVarInt( "enable_dms", 1 ) == 0 then
+    if not CustomChat.GetConVarBool( "enable_dms" ) then
         Derma_Message( L"server_dms_disabled", L"open_dm", L"ok" )
 
         return

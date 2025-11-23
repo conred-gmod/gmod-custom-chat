@@ -83,28 +83,27 @@ local IsStringValid = CustomChat.IsStringValid
 function CustomChat.Say( speaker, text, channel, localMode )
     if not IsStringValid( text ) then return end
     if not IsStringValid( channel ) then return end
-
     if channel:len() > CustomChat.MAX_CHANNEL_ID_LENGTH then return end
 
     if text:len() > CustomChat.MAX_MESSAGE_LENGTH then
         text = text:Left( CustomChat.MAX_MESSAGE_LENGTH )
     end
-    
+
     local teamOnly = channel == "team"
     local dmTarget = nil
-    
+
     -- Is this a DM?
     if util.SteamIDTo64( channel ) ~= "0" then
         dmTarget = player.GetBySteamID( channel )
         if not IsValid( dmTarget ) then return end
-        if CustomChat.GetConVarInt( "enable_dms", 1 ) == 0 then return end
+        if not CustomChat.GetConVarBool( "enable_dms" ) then return end
     end
-    
+
     text = CustomChat.CleanupString( text )
-    text = hook.Run( "PlayerSay", speaker, text, teamOnly, channel, localMode ) or text
-    
+    text = hook.Run( "PlayerSay", speaker, text, teamOnly, channel )
+
     if not IsStringValid( text ) then return end
-    
+
     if dmTarget then
         -- Send to the DM target
         message = CustomChat.ToJSON( {
@@ -130,7 +129,7 @@ function CustomChat.Say( speaker, text, channel, localMode )
 
         return
     end
-    
+
     hook.Run( "player_say", {
         priority = 1, -- ??
         userid = speaker:UserID(),
@@ -140,13 +139,12 @@ function CustomChat.Say( speaker, text, channel, localMode )
 
     local targets = GetListeners( speaker, text, channel, localMode )
     if #targets == 0 then return end
-    
+
     message = CustomChat.ToJSON( {
         channel = channel,
-        localMode = localMode,
         text = text
     } )
-    
+
     net.Start( "customchat.say", false )
     net.WriteString( message )
     net.WriteEntity( speaker )
