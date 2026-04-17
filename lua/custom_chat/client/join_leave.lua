@@ -128,7 +128,10 @@ local function OnPlayerActivated( ply, steamId, name, color, absenceLength )
         )
     end
 
-    if CustomChat.GetConVarInt( "enable_absence_messages", 0 ) == 0 then return end
+    if not CustomChat.GetConVarBool( "enable_absence_messages", false ) then return end
+    local hideAbsenceMessage = hook.Run( "CustomChatHideAbsenceMessage", ply, absenceLength )
+    if hideAbsenceMessage == true then return end
+
     if absenceLength < 1 then
         chat.AddText(
             color, name,
@@ -151,87 +154,33 @@ local function OnPlayerActivated( ply, steamId, name, color, absenceLength )
     )
 end
 
+CustomChat.PlayerInitialSpawnWaiting = CustomChat.PlayerInitialSpawnWaiting or {}
+hook.Add( "NetworkEntityCreated", "CustomChat.HandlePlayerInitialSpawn", function( ent )
+    if not ent:IsPlayer() then return end
+
+    local steamId = ent:SteamID()
+    local data = CustomChat.PlayerInitialSpawnWaiting[steamId]
+    if not data then return end
+
+    CustomChat.PlayerInitialSpawnWaiting[steamId] = nil
+    OnPlayerActivated( ent, steamId, data.name, data.color, data.absenceLength )
+end )
+
 net.Receive( "customchat.player_spawned", function()
-    local playerId = net.ReadUInt( 8 )
     local steamId = net.ReadString()
     local name = net.ReadString()
     local color = net.ReadColor( false )
     local absenceLength = net.ReadFloat()
 
-    -- Wait until the player entity is valid, within a few tries
-    local timerId = "CustomChat.WaitValid" .. steamId
-
-    -- Try every 1/2 seconds, 20 times, for a total of 10 seconds
-    timer.Create( timerId, 0.5, 20, function()
-        local ply = Player( playerId )
-
-        if IsValid( ply ) then
-            timer.Remove( timerId )
-            OnPlayerActivated( ply, steamId, name, color, absenceLength )
-        end
-    end )
-end )
-
-net.Receive( "customchat.player_connect", function()
-    if not JoinLeave.showConnect then return end
-
-    local c = JoinLeave.joinColor
-    local name = net.ReadString()
-    local steamId = net.ReadString()
-    local isBot = net.ReadBool()
-
-    if isBot and not JoinLeave.botConnectDisconnect then return end
-
-    -- Only use a player block if Custom Chat is enabled
-    if CustomChat.IsEnabled() then
-        name = {
-            blockType = "player",
-            blockValue = {
-                name = name,
-                id = steamId,
-                id64 = util.SteamIDTo64( steamId ),
-                isBot = isBot
-            }
-        }
+    local ply = player.GetBySteamID( steamId )
+    if IsValid( ply ) then
+        OnPlayerActivated( ply, steamId, name, color, absenceLength )
+        return
     end
 
-    chat.AddText(
-        Color( 255, 255, 255 ), JoinLeave.joinPrefix,
-        Color( c[1], c[2], c[3] ), name,
-        Color( 150, 150, 150 ), " <" .. steamId .. "> ",
-        Color( 255, 255, 255 ), JoinLeave.joinSuffix
-    )
-end )
-
-net.Receive( "customchat.player_disconnect", function()
-    if not JoinLeave.showDisconnect then return end
-
-    local c = JoinLeave.leaveColor
-    local name = net.ReadString()
-    local steamId = net.ReadString()
-    local isBot = net.ReadBool()
-    local reason = net.ReadString()
-
-    if isBot and not JoinLeave.botConnectDisconnect then return end
-
-    -- Only use a player block if Custom Chat is enabled
-    if CustomChat.IsEnabled() then
-        name = {
-            blockType = "player",
-            blockValue = {
-                name = name,
-                id = steamId,
-                id64 = util.SteamIDTo64( steamId ),
-                isBot = isBot
-            }
-        }
-    end
-
-    chat.AddText(
-        Color( 255, 255, 255 ), JoinLeave.leavePrefix,
-        Color( c[1], c[2], c[3] ), name,
-        Color( 150, 150, 150 ), " <" .. steamId .. "> ",
-        Color( 255, 255, 255 ), JoinLeave.leaveSuffix,
-        Color( 150, 150, 150 ), " (" .. reason .. ")"
-    )
+    CustomChat.PlayerInitialSpawnWaiting[steamId] = {
+        name = name,
+        color = color,
+        absenceLength = absenceLength
+    }
 end )
